@@ -29,5 +29,5 @@
 
 ### 1. Клонирование репозитория
 ```bash
-git clone <repository-url>
+git clone <https://github.com/Alex-Super-Man/cash-flow-manager>
 cd cash_flow_manager
