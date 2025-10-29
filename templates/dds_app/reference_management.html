@@ -1,0 +1,266 @@
+﻿{% extends 'dds_app/base.html' %}
+
+{% block title %}Управление справочниками - Управление ДДС{% endblock %}
+{% block page_title %}Управление справочниками{% endblock %}
+{% block page_subtitle %}Настройка типов операций, категорий и подкатегорий{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Статусы -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-check-circle"></i> Статусы операций
+                </h5>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addStatusModal">
+                    <i class="bi bi-plus"></i> Добавить
+                </button>
+            </div>
+            <div class="card-body">
+                {% if statuses %}
+                <div class="list-group list-group-flush">
+                    {% for status in statuses %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">{{ status.name }}</h6>
+                            {% if status.description %}
+                            <small class="text-muted">{{ status.description }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#editStatusModal"
+                                    data-id="{{ status.id }}"
+                                    data-name="{{ status.name }}"
+                                    data-description="{{ status.description|default:'' }}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            {% if status.transaction_set.count == 0 %}
+                            <a href="#" class="btn btn-outline-danger delete-status" data-id="{{ status.id }}">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                            {% else %}
+                            <button class="btn btn-outline-secondary" title="Используется в {{ status.transaction_set.count }} транзакциях" disabled>
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-check-circle fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">Статусы не добавлены</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Типы операций -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-arrow-left-right"></i> Типы операций
+                </h5>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addTypeModal">
+                    <i class="bi bi-plus"></i> Добавить
+                </button>
+            </div>
+            <div class="card-body">
+                {% if transaction_types %}
+                <div class="list-group list-group-flush">
+                    {% for type in transaction_types %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">{{ type.name }}</h6>
+                            {% if type.description %}
+                            <small class="text-muted">{{ type.description }}</small>
+                            {% endif %}
+                            <br>
+                            <small class="text-info">
+                                {{ type.categories.count }} категорий
+                            </small>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editTypeModal"
+                                    data-id="{{ type.id }}"
+                                    data-name="{{ type.name }}"
+                                    data-description="{{ type.description|default:'' }}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            {% if type.transaction_set.count == 0 and type.categories.count == 0 %}
+                            <a href="#" class="btn btn-outline-danger delete-type" data-id="{{ type.id }}">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                            {% else %}
+                            <button class="btn btn-outline-secondary" 
+                                    title="Используется в {{ type.transaction_set.count }} транзакциях"
+                                    disabled>
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-arrow-left-right fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">Типы операций не добавлены</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Категории -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-tags"></i> Категории
+                </h5>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                    <i class="bi bi-plus"></i> Добавить
+                </button>
+            </div>
+            <div class="card-body">
+                {% if categories %}
+                <div class="list-group list-group-flush">
+                    {% for category in categories %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">{{ category.name }}</h6>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editCategoryModal"
+                                        data-id="{{ category.id }}"
+                                        data-name="{{ category.name }}"
+                                        data-type="{{ category.transaction_type.id }}"
+                                        data-description="{{ category.description|default:'' }}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                {% if category.transaction_set.count == 0 and category.subcategories.count == 0 %}
+                                <a href="#" class="btn btn-outline-danger delete-category" data-id="{{ category.id }}">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                                {% else %}
+                                <button class="btn btn-outline-secondary"
+                                        title="Используется в {{ category.transaction_set.count }} транзакциях"
+                                        disabled>
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                {% if category.description %}
+                                {{ category.description }}
+                                {% else %}
+                                Без описания
+                                {% endif %}
+                            </small>
+                            <div>
+                                <span class="badge bg-primary">{{ category.transaction_type }}</span>
+                                <small class="text-info ms-2">
+                                    {{ category.subcategories.count }} подкат.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-tags fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">Категории не добавлены</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Подкатегории -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-tag"></i> Подкатегории
+                </h5>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addSubcategoryModal">
+                    <i class="bi bi-plus"></i> Добавить
+                </button>
+            </div>
+            <div class="card-body">
+                {% if subcategories %}
+                <div class="list-group list-group-flush">
+                    {% for subcategory in subcategories %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">{{ subcategory.name }}</h6>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editSubcategoryModal"
+                                        data-id="{{ subcategory.id }}"
+                                        data-name="{{ subcategory.name }}"
+                                        data-category="{{ subcategory.category.id }}"
+                                        data-description="{{ subcategory.description|default:'' }}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                {% if subcategory.transaction_set.count == 0 %}
+                                <a href="#" class="btn btn-outline-danger delete-subcategory" data-id="{{ subcategory.id }}">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                                {% else %}
+                                <button class="btn btn-outline-secondary"
+                                        title="Используется в {{ subcategory.transaction_set.count }} транзакциях"
+                                        disabled>
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                {% if subcategory.description %}
+                                {{ subcategory.description }}
+                                {% else %}
+                                Без описания
+                                {% endif %}
+                            </small>
+                            <span class="badge bg-info">{{ subcategory.category }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-tag fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">Подкатегории не добавлены</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальные окна будут добавлены с JavaScript -->
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Здесь будет JavaScript для модальных окон
+    // В реальном проекте нужно реализовать AJAX-запросы для CRUD операций
+    console.log('Reference management page loaded');
+</script>
+{% endblock %}

@@ -1,0 +1,290 @@
+﻿{% extends 'dds_app/base.html' %}
+{% load custom_filters %}
+
+{% block title %}Транзакции - Управление ДДС{% endblock %}
+{% block page_title %}Управление транзакциями{% endblock %}
+{% block page_subtitle %}Просмотр, фильтрация и управление денежными операциями{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'transaction_create' %}" class="btn btn-primary">
+    <i class="bi bi-plus-circle"></i> Новая транзакция
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Статистика фильтров -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body py-3">
+                <div class="row text-center">
+                    <div class="col-md-3 border-end">
+                        <small class="text-muted">Показано транзакций</small>
+                        <div class="h5 mb-0 fw-bold">{{ transactions.count }}</div>
+                    </div>
+                    <div class="col-md-3 border-end">
+                        <small class="text-muted">Доходы</small>
+                        <div class="h5 mb-0 fw-bold text-success">{{ total_income|default:0|floatformat:2 }} руб</div>
+                    </div>
+                    <div class="col-md-3 border-end">
+                        <small class="text-muted">Расходы</small>
+                        <div class="h5 mb-0 fw-bold text-danger">{{ total_expense|default:0|floatformat:2 }} руб</div>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Баланс</small>
+                        <div class="h5 mb-0 fw-bold text-primary">{{ balance|default:0|floatformat:2 }} руб</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-filter"></i> Фильтры
+                </h5>
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#filterCollapse" aria-expanded="true">
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+            </div>
+            
+            <div class="collapse show" id="filterCollapse">
+                <div class="card-body">
+                    <form method="get" class="row g-3" id="filterForm">
+                        <div class="col-md-2">
+                            <label for="{{ filter_form.start_date.id_for_label }}" class="form-label">
+                                {{ filter_form.start_date.label }}
+                            </label>
+                            {{ filter_form.start_date }}
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <label for="{{ filter_form.end_date.id_for_label }}" class="form-label">
+                                {{ filter_form.end_date.label }}
+                            </label>
+                            {{ filter_form.end_date }}
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <label for="{{ filter_form.status.id_for_label }}" class="form-label">
+                                {{ filter_form.status.label }}
+                            </label>
+                            {{ filter_form.status }}
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <label for="{{ filter_form.transaction_type.id_for_label }}" class="form-label">
+                                {{ filter_form.transaction_type.label }}
+                            </label>
+                            {{ filter_form.transaction_type }}
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <label for="{{ filter_form.category.id_for_label }}" class="form-label">
+                                {{ filter_form.category.label }}
+                            </label>
+                            {{ filter_form.category }}
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <label for="{{ filter_form.subcategory.id_for_label }}" class="form-label">
+                                {{ filter_form.subcategory.label }}
+                            </label>
+                            {{ filter_form.subcategory }}
+                        </div>
+                        
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-funnel"></i> Применить фильтры
+                            </button>
+                            <a href="{% url 'transaction_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-clockwise"></i> Сбросить
+                            </a>
+                            
+                            {% if request.GET %}
+                            <span class="ms-2 text-muted">
+                                <i class="bi bi-info-circle"></i> Применены фильтры
+                            </span>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-ul"></i> Список транзакций
+                </h5>
+                
+                <div class="d-flex align-items-center">
+                    <span class="text-muted me-3">
+                        Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                {% if transactions %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Дата</th>
+                                <th>Статус</th>
+                                <th>Тип</th>
+                                <th>Категория</th>
+                                <th>Подкатегория</th>
+                                <th>Сумма</th>
+                                <th>Комментарий</th>
+                                <th class="text-center">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions %}
+                            <tr>
+                                <td>
+                                    <strong>{{ transaction.created_date|date:"d.m.Y" }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if transaction.status.name == 'Выполнено' %}success{% else %}warning{% endif %}">
+                                        {{ transaction.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if transaction.is_income %}success{% else %}danger{% endif %}">
+                                        {{ transaction.transaction_type }}
+                                    </span>
+                                </td>
+                                <td>{{ transaction.category }}</td>
+                                <td>
+                                    <small class="text-muted">{{ transaction.subcategory }}</small>
+                                </td>
+                                <td class="{% if transaction.is_income %}amount-income{% else %}amount-expense{% endif %}">
+                                    <strong>{{ transaction.amount|floatformat:2 }} руб</strong>
+                                </td>
+                                <td>
+                                    {% if transaction.comment %}
+                                    <span title="{{ transaction.comment }}">
+                                        {{ transaction.comment|truncatewords:8 }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="table-actions text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'transaction_edit' transaction.pk %}" 
+                                           class="btn btn-outline-primary" 
+                                           title="Редактировать">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{% url 'transaction_delete' transaction.pk %}" 
+                                           class="btn btn-outline-danger" 
+                                           title="Удалить">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Пагинация -->
+                {% if is_paginated %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% param_replace page=1 %}">
+                                <i class="bi bi-chevron-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?{% param_replace page=page_obj.previous_page_number %}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% param_replace page=num %}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% param_replace page=page_obj.next_page_number %}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?{% param_replace page=page_obj.paginator.num_pages %}">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                    <h5 class="text-muted mt-3">Транзакции не найдены</h5>
+                    <p class="text-muted">
+                        {% if request.GET %}
+                        Попробуйте изменить параметры фильтрации
+                        {% else %}
+                        У вас еще нет ни одной транзакции
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'transaction_create' %}" class="btn btn-primary mt-2">
+                        <i class="bi bi-plus-circle"></i> Создать первую транзакцию
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Авто-применение фильтров при изменении дат
+        $('#id_start_date, #id_end_date').change(function() {
+            if ($('#id_start_date').val() && $('#id_end_date').val()) {
+                $('#filterForm').submit();
+            }
+        });
+
+        // Подтверждение удаления
+        $('.btn-outline-danger').click(function(e) {
+            if (!confirm('Вы уверены, что хотите удалить эту транзакцию?')) {
+                e.preventDefault();
+            }
+        });
+    });
+</script>
+{% endblock %}

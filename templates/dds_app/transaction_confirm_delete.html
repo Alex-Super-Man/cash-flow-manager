@@ -1,0 +1,84 @@
+﻿{% extends 'dds_app/base.html' %}
+
+{% block title %}Удаление транзакции - Управление ДДС{% endblock %}
+{% block page_title %}Подтверждение удаления{% endblock %}
+{% block page_subtitle %}Удаление записи о движении денежных средств{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Подтверждение удаления
+                </h5>
+            </div>
+            
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="bi bi-trash fs-1 text-danger"></i>
+                    <h4 class="mt-3">Вы уверены, что хотите удалить эту транзакцию?</h4>
+                </div>
+                
+                <!-- Информация о транзакции -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h6>Детали транзакции:</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Дата:</strong></td>
+                                <td>{{ object.created_date|date:"d.m.Y" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Тип:</strong></td>
+                                <td>
+                                    <span class="badge bg-{% if object.is_income %}success{% else %}danger{% endif %}">
+                                        {{ object.transaction_type }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Категория:</strong></td>
+                                <td>{{ object.category }} → {{ object.subcategory }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Сумма:</strong></td>
+                                <td class="{% if object.is_income %}amount-income{% else %}amount-expense{% endif %}">
+                                    <strong>{{ object.amount }} руб</strong>
+                                </td>
+                            </tr>
+                            {% if object.comment %}
+                            <tr>
+                                <td><strong>Комментарий:</strong></td>
+                                <td>{{ object.comment }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">
+                        <i class="bi bi-info-circle"></i> Внимание!
+                    </h6>
+                    <p class="mb-0">
+                        Это действие невозможно отменить. Все данные этой транзакции будут безвозвратно удалены.
+                    </p>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a href="{% url 'transaction_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Отмена
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Да, удалить транзакцию
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,222 @@
+﻿{% extends 'dds_app/base.html' %}
+
+{% block title %}Дашборд - Управление ДДС{% endblock %}
+{% block page_title %}Финансовый дашборд{% endblock %}
+{% block page_subtitle %}Обзор движения денежных средств{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Карточки статистики -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card border-start border-primary border-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+                            Общий баланс
+                        </div>
+                        <div class="h5 mb-0 fw-bold text-gray-800">
+                            {{ balance|default:0|floatformat:2 }} руб
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-wallet2 text-primary fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card border-start border-success border-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                            Доходы
+                        </div>
+                        <div class="h5 mb-0 fw-bold text-gray-800">
+                            {{ total_income|default:0|floatformat:2 }} руб
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-arrow-up-circle text-success fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card border-start border-danger border-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-xs fw-bold text-danger text-uppercase mb-1">
+                            Расходы
+                        </div>
+                        <div class="h5 mb-0 fw-bold text-gray-800">
+                            {{ total_expense|default:0|floatformat:2 }} руб
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-arrow-down-circle text-danger fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card border-start border-info border-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                            Всего транзакций
+                        </div>
+                        <div class="h5 mb-0 fw-bold text-gray-800">
+                            {{ total_transactions }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-receipt text-info fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Последние транзакции -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history"></i> Последние транзакции
+                </h5>
+                <a href="{% url 'transaction_list' %}" class="btn btn-sm btn-outline-primary">
+                    Все транзакции
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_transactions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Дата</th>
+                                <th>Тип</th>
+                                <th>Категория</th>
+                                <th>Сумма</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in recent_transactions %}
+                            <tr>
+                                <td>{{ transaction.created_date|date:"d.m.Y" }}</td>
+                                <td>{{ transaction.transaction_type }}</td>
+                                <td>{{ transaction.category }}</td>
+                                <td class="{% if transaction.is_income %}amount-income{% else %}amount-expense{% endif %}">
+                                    {{ transaction.amount }} руб
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if transaction.status.name == 'Выполнено' %}success{% else %}warning{% endif %}">
+                                        {{ transaction.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">Нет транзакций</p>
+                    <a href="{% url 'transaction_create' %}" class="btn btn-primary">
+                        Создать первую транзакцию
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Статистика по категориям -->
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-bar-chart"></i> Топ категорий
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if category_stats %}
+                <div class="list-group list-group-flush">
+                    {% for stat in category_stats %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <h6 class="mb-1">{{ stat.category.name }}</h6>
+                            <small class="text-muted">{{ stat.count }} транзакций</small>
+                        </div>
+                        <span class="badge bg-primary rounded-pill">
+                            {{ stat.total|floatformat:2 }} руб
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-pie-chart fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">Нет данных для статистики</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Быстрые действия -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning"></i> Быстрые действия
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <a href="{% url 'transaction_create' %}?transaction_type=1" class="btn btn-success w-100 h-100 py-3">
+                            <i class="bi bi-plus-circle fs-4 d-block mb-2"></i>
+                            Новый доход
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'transaction_create' %}?transaction_type=2" class="btn btn-danger w-100 h-100 py-3">
+                            <i class="bi bi-dash-circle fs-4 d-block mb-2"></i>
+                            Новый расход
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'transaction_list' %}" class="btn btn-primary w-100 h-100 py-3">
+                            <i class="bi bi-list-ul fs-4 d-block mb-2"></i>
+                            Все транзакции
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'reference_management' %}" class="btn btn-info w-100 h-100 py-3">
+                            <i class="bi bi-gear fs-4 d-block mb-2"></i>
+                            Настройки
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
